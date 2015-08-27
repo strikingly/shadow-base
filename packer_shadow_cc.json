@@ -1,0 +1,30 @@
+{
+  "builders": [{
+    "type": "googlecompute",
+    "account_file": "credentials/gc.json",
+    "project_id": "strikingly-test",
+    "source_image": "centos-7-v20150710",
+    "zone": "asia-east1-a",
+    "image_name": "packer-shadow-cc",
+    "image_description": "This image is a basic image for shadow project command center, include frontend panel and db",
+    "tags": ["shadow"],
+    "ssh_pty": "true",
+    "ssh_username": "hyuwang"
+  }],
+
+  "provisioners": [
+    {
+    "type": "shell",
+    "inline": [
+      "sleep 30",
+      "sudo yum update -y",
+      "sudo yum install -y epel-release",
+      "sudo yum install -y docker* telnet python-pip wget ansible"
+    ]},
+    {
+    "type": "ansible-local",
+    "playbook_file": "shadow_cc/shadow_provision.yml",
+    "playbook_dir": "shadow_cc"
+    }
+  ]
+}

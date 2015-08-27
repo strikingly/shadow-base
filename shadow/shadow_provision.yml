@@ -1,0 +1,59 @@
+---
+- name: Provision shadow base image
+  hosts: localhost
+  sudo: yes
+  sudo_user: root
+  tasks:
+    - name: Increase tcp limits
+      template: src="templates/limits.conf.j2" dest="/etc/security/limits.conf" owner=root group=root mode=0644
+
+    - name: Unlimit tcp connections
+      shell: ulimit -n 51200
+
+    - name: Optimize tcp procotol
+      template: src="templates/sysctl.conf.j2" dest="/etc/sysctl.conf" owner=root group=root mode=0644
+
+    - name: Let new tcp config work
+      shell: sysctl -p
+
+    - name: Copy shadowsocks to remote
+      copy: src=shadowsocks dest=/usr/bin
+
+    - name: Make config for supervisord
+      template: src="templates/supervisord.conf.j2" dest="/etc/supervisord.conf"
+
+    - name: Config ststemd
+      template: src="templates/supervisord.j2" dest="/etc/rc.d/init.d/supervisord" mode=0755
+
+    - name: Start supervisor service
+      service: name=supervisord state=started
+
+    - name: Make supervisor start at boot
+      lineinfile: dest=/etc/rc.d/rc.local line="supervisord -c /etc/supervisord.conf" mode=0755
+
+    - name: Start shadowsocks
+      supervisorctl: name=shadowsocks state=started
+
+    - name: Install docker-py
+      pip: name=docker-py version=1.2.3 state=present
+
+    - name: Start docker
+      service: name=docker state=started enabled=yes
+
+    - name: Run cAdvisor container
+      docker:
+        name: cadvisor
+        image: "google/cadvisor:latest"
+        privileged: yes
+        expose:
+          - 8080
+        ports:
+          - "80:8080"
+        state: restarted
+        restart_policy: always
+        volumes:
+          - /:/rootfs:ro
+          - /var/run:/var/run:rw
+          - /sys:/sys:ro
+          - /cgroup:/cgroup:ro
+          - /var/lib/docker/:/var/lib/docker:ro

@@ -1,0 +1,7 @@
+{
+    "server":"127.0.0.1",
+    "server_port":8388,
+    "password":"getshitdone",
+    "method": "aes-128-cfb",
+    "timeout":60
+}

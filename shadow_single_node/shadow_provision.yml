@@ -1,0 +1,55 @@
+---
+- name: Provision shadow command center image
+  hosts: localhost
+  sudo: yes
+  sudo_user: root
+  tasks:
+    - name: Increase tcp limits
+      template: src="templates/limits.conf.j2" dest="/etc/security/limits.conf" owner=root group=root mode=0644
+
+    - name: Unlimit tcp connections
+      shell: ulimit -n 51200
+
+    - name: Optimize tcp procotol
+      template: src="templates/sysctl.conf.j2" dest="/etc/sysctl.conf" owner=root group=root mode=0644
+
+    - name: Let new tcp config work
+      shell: sysctl -p
+
+    - name: Install docker-py
+      pip: name=docker-py version=1.2.3 state=present
+
+    - name: Start docker
+      service: name=docker state=started enabled=yes
+
+    - name: Build docker image
+      command: docker build -t strikingly/shadow .
+
+    - name: Run docker container
+      docker:
+        name: shadow
+        image: "strikingly/shadow:latest"
+        expose:
+          - 8388
+        ports:
+          - "443:8388"
+        state: restarted
+        restart_policy: always
+
+    - name: Run cAdvisor container
+      docker:
+        name: cadvisor
+        image: "google/cadvisor:latest"
+        privileged: yes
+        expose:
+          - 8080
+        ports:
+          - "80:8080"
+        state: restarted
+        restart_policy: always
+        volumes:
+          - /:/rootfs:ro
+          - /var/run:/var/run:rw
+          - /sys:/sys:ro
+          - /cgroup:/cgroup:ro
+          - /var/lib/docker/:/var/lib/docker:ro

@@ -1,0 +1,23 @@
+language: python
+python:
+  - 2.6
+  - 2.7
+  - pypy
+cache:
+  directories:
+    - dante-1.4.0
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq build-essential libssl-dev swig python-m2crypto python-numpy dnsutils
+  - pip install m2crypto salsa20 pep8
+  - sudo tests/socksify/install.sh
+script:
+  - pep8 .
+  - python tests/test.py -c tests/table.json
+  - python tests/test.py -c tests/aes.json
+  - python tests/test.py -c tests/rc4-md5.json
+  - python tests/test.py -c tests/salsa20.json
+  - python tests/test.py -c tests/server-multi-ports.json
+  - python tests/test.py -c tests/server-multi-passwd.json
+  - python tests/test.py -c tests/server-multi-passwd-table.json
+  - python tests/test.py -c tests/workers.json
