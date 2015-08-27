@@ -58,3 +58,9 @@ timeout         server option, in seconds
 * `terraform show | grep ip_address` will show you the ip address you should use for shadowsocks
 
 * You can view the server status at http://YOUR_IP_ADDRESS/docker/shadow
+
+* If the ip got blocked, you can simply generate a new one by:
+
+  `terraform taint google_compute_forwarding_rule.default && terraform apply`
+
+  then run `terraform show | grep ip_address` again to show the new ip address
